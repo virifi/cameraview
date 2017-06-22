@@ -43,12 +43,14 @@ abstract class DisplayOrientationDetector {
     Display mDisplay;
 
     private int mLastKnownDisplayOrientation = 0;
+    private int mLastKnownRealDisplayOrientation = 0;
 
     public DisplayOrientationDetector(Context context) {
         mOrientationEventListener = new OrientationEventListener(context) {
 
             /** This is either Surface.Rotation_0, _90, _180, _270, or -1 (invalid). */
             private int mLastKnownRotation = -1;
+            private int mLastKnownRealRotation = -1;
 
             @Override
             public void onOrientationChanged(int orientation) {
@@ -57,9 +59,25 @@ abstract class DisplayOrientationDetector {
                     return;
                 }
                 final int rotation = mDisplay.getRotation();
-                if (mLastKnownRotation != rotation) {
+                final int realRotation = getRealRotation(orientation);
+                if (mLastKnownRotation != rotation || mLastKnownRealRotation != realRotation) {
                     mLastKnownRotation = rotation;
-                    dispatchOnDisplayOrientationChanged(DISPLAY_ORIENTATIONS.get(rotation));
+                    mLastKnownRealRotation = realRotation;
+                    dispatchOnDisplayOrientationChanged(DISPLAY_ORIENTATIONS.get(rotation), DISPLAY_ORIENTATIONS.get(realRotation));
+                }
+            }
+
+            private int getRealRotation(int orientation) {
+                if (orientation >= 315 || orientation < 45) {
+                    return Surface.ROTATION_0;
+                } else if (orientation >= 45 && orientation < 135) {
+                    return Surface.ROTATION_270;
+                } else if (orientation >= 135 && orientation < 225) {
+                    return Surface.ROTATION_180;
+                } else if (orientation >= 225 && orientation < 315) {
+                    return Surface.ROTATION_90;
+                } else {
+                    return Surface.ROTATION_0;
                 }
             }
         };
@@ -69,7 +87,8 @@ abstract class DisplayOrientationDetector {
         mDisplay = display;
         mOrientationEventListener.enable();
         // Immediately dispatch the first callback
-        dispatchOnDisplayOrientationChanged(DISPLAY_ORIENTATIONS.get(display.getRotation()));
+        int orientation = DISPLAY_ORIENTATIONS.get(display.getRotation());
+        dispatchOnDisplayOrientationChanged(orientation, orientation);
     }
 
     public void disable() {
@@ -81,16 +100,18 @@ abstract class DisplayOrientationDetector {
         return mLastKnownDisplayOrientation;
     }
 
-    void dispatchOnDisplayOrientationChanged(int displayOrientation) {
+    void dispatchOnDisplayOrientationChanged(int displayOrientation, int displayRealOrientation) {
         mLastKnownDisplayOrientation = displayOrientation;
-        onDisplayOrientationChanged(displayOrientation);
+        mLastKnownRealDisplayOrientation = displayRealOrientation;
+        onDisplayOrientationChanged(displayOrientation, displayRealOrientation);
     }
 
     /**
      * Called when display orientation is changed.
      *
      * @param displayOrientation One of 0, 90, 180, and 270.
+     * @param realDisplayOrientation
      */
-    public abstract void onDisplayOrientationChanged(int displayOrientation);
+    public abstract void onDisplayOrientationChanged(int displayOrientation, int realDisplayOrientation);
 
 }

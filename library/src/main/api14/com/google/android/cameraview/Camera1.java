@@ -70,6 +70,7 @@ class Camera1 extends CameraViewImpl {
     private int mFlash;
 
     private int mDisplayOrientation;
+    private int mPreviewDisplayOrientation;
 
     Camera1(Callback callback, PreviewImpl preview) {
         super(callback, preview);
@@ -259,6 +260,16 @@ class Camera1 extends CameraViewImpl {
         if (isCameraOpened()) {
             mCameraParameters.setRotation(calcCameraRotation(displayOrientation));
             mCamera.setParameters(mCameraParameters);
+        }
+    }
+
+    @Override
+    void setPreviewDisplayOrientation(int displayOrientation) {
+        if (mPreviewDisplayOrientation == displayOrientation) {
+            return;
+        }
+        mPreviewDisplayOrientation = displayOrientation;
+        if (isCameraOpened()) {
             final boolean needsToStopPreview = mShowingPreview && Build.VERSION.SDK_INT < 14;
             if (needsToStopPreview) {
                 mCamera.stopPreview();
@@ -305,7 +316,7 @@ class Camera1 extends CameraViewImpl {
             mAspectRatio = Constants.DEFAULT_ASPECT_RATIO;
         }
         adjustCameraParameters();
-        mCamera.setDisplayOrientation(calcDisplayOrientation(mDisplayOrientation));
+        mCamera.setDisplayOrientation(calcDisplayOrientation(mPreviewDisplayOrientation));
         mCallback.onCameraOpened();
     }
 
