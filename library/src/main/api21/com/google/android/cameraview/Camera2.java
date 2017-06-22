@@ -196,6 +196,8 @@ class Camera2 extends CameraViewImpl {
 
     private int mDisplayOrientation;
 
+    private SizeSelector mPictureSizeSelector;
+
     Camera2(Callback callback, PreviewImpl preview, Context context) {
         super(callback, preview);
         mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
@@ -351,6 +353,11 @@ class Camera2 extends CameraViewImpl {
         mPreview.setDisplayOrientation(displayOrientation);
     }
 
+    @Override
+    void setPictureSizeSelector(SizeSelector sizeSelector) {
+        mPictureSizeSelector = sizeSelector;
+    }
+
     /**
      * <p>Chooses a camera ID by the specified camera facing ({@link #mFacing}).</p>
      * <p>This rewrites {@link #mCameraId}, {@link #mCameraCharacteristics}, and optionally
@@ -451,8 +458,16 @@ class Camera2 extends CameraViewImpl {
         if (mImageReader != null) {
             mImageReader.close();
         }
-        Size largest = mPictureSizes.sizes(mAspectRatio).last();
-        mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
+
+        Size pictureSize;
+        if (mPictureSizeSelector == null) {
+            // Largest picture size in this ratio
+            pictureSize = mPictureSizes.sizes(mAspectRatio).last();
+        } else {
+            pictureSize = mPictureSizeSelector.select(mAspectRatio, mPictureSizes.sizes(mAspectRatio));
+        }
+
+        mImageReader = ImageReader.newInstance(pictureSize.getWidth(), pictureSize.getHeight(),
                 ImageFormat.JPEG, /* maxImages */ 2);
         mImageReader.setOnImageAvailableListener(mOnImageAvailableListener, null);
     }

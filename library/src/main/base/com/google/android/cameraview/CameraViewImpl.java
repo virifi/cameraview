@@ -71,6 +71,8 @@ abstract class CameraViewImpl {
 
     abstract void setPreviewDisplayOrientation(int displayOrientation);
 
+    abstract void setPictureSizeSelector(SizeSelector sizeSelector);
+
     interface Callback {
 
         void onCameraOpened();

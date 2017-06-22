@@ -72,6 +72,8 @@ class Camera1 extends CameraViewImpl {
     private int mDisplayOrientation;
     private int mPreviewDisplayOrientation;
 
+    private SizeSelector mPictureSizeSelector;
+
     Camera1(Callback callback, PreviewImpl preview) {
         super(callback, preview);
         preview.setCallback(new PreviewImpl.Callback() {
@@ -281,6 +283,11 @@ class Camera1 extends CameraViewImpl {
         }
     }
 
+    @Override
+    void setPictureSizeSelector(SizeSelector sizeSelector) {
+        mPictureSizeSelector = sizeSelector;
+    }
+
     /**
      * This rewrites {@link #mCameraId} and {@link #mCameraInfo}.
      */
@@ -340,8 +347,14 @@ class Camera1 extends CameraViewImpl {
         Size size = chooseOptimalSize(sizes);
 
         // Always re-apply camera parameters
-        // Largest picture size in this ratio
-        final Size pictureSize = mPictureSizes.sizes(mAspectRatio).last();
+        Size pictureSize;
+        if (mPictureSizeSelector == null) {
+            // Largest picture size in this ratio
+            pictureSize = mPictureSizes.sizes(mAspectRatio).last();
+        } else {
+            pictureSize = mPictureSizeSelector.select(mAspectRatio, mPictureSizes.sizes(mAspectRatio));
+        }
+
         if (mShowingPreview) {
             mCamera.stopPreview();
         }
